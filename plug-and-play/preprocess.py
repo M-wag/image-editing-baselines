@@ -50,13 +50,13 @@ class Preprocess(nn.Module):
             raise ValueError(f'Stable-diffusion version {self.sd_version} not supported.')
 
         # Create model
-        self.vae = AutoencoderKL.from_pretrained(model_key, subfolder="vae", revision="fp16",
-                                                 torch_dtype=torch.float16).to(self.device)
+        self.vae = AutoencoderKL.from_pretrained(model_key, subfolder="vae", 
+                                                 torch_dtype=torch.float32).to(self.device)
         self.tokenizer = CLIPTokenizer.from_pretrained(model_key, subfolder="tokenizer")
-        self.text_encoder = CLIPTextModel.from_pretrained(model_key, subfolder="text_encoder", revision="fp16",
-                                                          torch_dtype=torch.float16).to(self.device)
-        self.unet = UNet2DConditionModel.from_pretrained(model_key, subfolder="unet", revision="fp16",
-                                                         torch_dtype=torch.float16).to(self.device)
+        self.text_encoder = CLIPTextModel.from_pretrained(model_key, subfolder="text_encoder", 
+                                                          torch_dtype=torch.float32).to(self.device)
+        self.unet = UNet2DConditionModel.from_pretrained(model_key, subfolder="unet",
+                                                         torch_dtype=torch.float32).to(self.device)
         self.scheduler = DDIMScheduler.from_pretrained(model_key, subfolder="scheduler")
         print(f'[INFO] loaded stable diffusion!')
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_path', type=str,
                         default='data/horse.jpg')
     parser.add_argument('--save_dir', type=str, default='latents')
-    parser.add_argument('--sd_version', type=str, default='2.1', choices=['1.5', '2.0', '2.1'],
+    parser.add_argument('--sd_version', type=str, default='1.5', choices=['1.5', '2.0', '2.1'],
                         help="stable diffusion version")
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--steps', type=int, default=999)
