@@ -1,0 +1,22 @@
+# directories
+path_images: ""
+path_prompts: ""
+
+# inputs
+seed: 0
+num_images: 1 
+prompted: false
+
+# dynamics
+model_path: "runwayml/stable-diffusion-v1-5"
+cfg-scale : 7.5
+
+# sampler 
+num_timesteps : 50
+beta_start: 0.00085 
+beta_schedule: 0.012
+beta_scheduler: "scaled_linear"
+
+
+
+
