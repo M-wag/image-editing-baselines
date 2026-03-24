@@ -26,39 +26,46 @@ def get_timesteps(scheduler, num_inference_steps, strength, device):
 
 
 class Preprocess(nn.Module):
-    def __init__(self, device, sd_version='2.0', hf_key=None):
+    def __init__(self, device, sd_version='2.0', hf_key=None, pipe=None):
         super().__init__()
 
         self.device = device
         self.sd_version = sd_version
         self.use_depth = False
 
-        print(f'[INFO] loading stable diffusion...')
-        if hf_key is not None:
-            print(f'[INFO] using hugging face custom model key: {hf_key}')
-            model_key = hf_key
-        elif self.sd_version == '2.1':
-            model_key = "stabilityai/stable-diffusion-2-1-base"
-        elif self.sd_version == '2.0':
-            model_key = "stabilityai/stable-diffusion-2-base"
-        elif self.sd_version == '1.5':
-            model_key = "runwayml/stable-diffusion-v1-5"
-        elif self.sd_version == 'depth':
-            model_key = "stabilityai/stable-diffusion-2-depth"
-            self.use_depth = True
+        if pipe is not None:
+            self.vae = pipe.vae
+            self.tokenizer = pipe.tokenizer
+            self.text_encoder = pipe.text_encoder
+            self.unet = pipe.unet
+            self.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
         else:
-            raise ValueError(f'Stable-diffusion version {self.sd_version} not supported.')
+            print(f'[INFO] loading stable diffusion...')
+            if hf_key is not None:
+                print(f'[INFO] using hugging face custom model key: {hf_key}')
+                model_key = hf_key
+            elif self.sd_version == '2.1':
+                model_key = "stabilityai/stable-diffusion-2-1-base"
+            elif self.sd_version == '2.0':
+                model_key = "stabilityai/stable-diffusion-2-base"
+            elif self.sd_version == '1.5':
+                model_key = "runwayml/stable-diffusion-v1-5"
+            elif self.sd_version == 'depth':
+                model_key = "stabilityai/stable-diffusion-2-depth"
+                self.use_depth = True
+            else:
+                raise ValueError(f'Stable-diffusion version {self.sd_version} not supported.')
 
-        # Create model
-        self.vae = AutoencoderKL.from_pretrained(model_key, subfolder="vae", 
-                                                 torch_dtype=torch.float32).to(self.device)
-        self.tokenizer = CLIPTokenizer.from_pretrained(model_key, subfolder="tokenizer")
-        self.text_encoder = CLIPTextModel.from_pretrained(model_key, subfolder="text_encoder", 
-                                                          torch_dtype=torch.float32).to(self.device)
-        self.unet = UNet2DConditionModel.from_pretrained(model_key, subfolder="unet",
-                                                         torch_dtype=torch.float32).to(self.device)
-        self.scheduler = DDIMScheduler.from_pretrained(model_key, subfolder="scheduler")
-        print(f'[INFO] loaded stable diffusion!')
+            # Create model
+            self.vae = AutoencoderKL.from_pretrained(model_key, subfolder="vae",
+                                                     torch_dtype=torch.float32).to(self.device)
+            self.tokenizer = CLIPTokenizer.from_pretrained(model_key, subfolder="tokenizer")
+            self.text_encoder = CLIPTextModel.from_pretrained(model_key, subfolder="text_encoder",
+                                                              torch_dtype=torch.float32).to(self.device)
+            self.unet = UNet2DConditionModel.from_pretrained(model_key, subfolder="unet",
+                                                             torch_dtype=torch.float32).to(self.device)
+            self.scheduler = DDIMScheduler.from_pretrained(model_key, subfolder="scheduler")
+            print(f'[INFO] loaded stable diffusion!')
 
         self.inversion_func = self.ddim_inversion
 
@@ -83,7 +90,7 @@ class Preprocess(nn.Module):
 
     def load_img(self, image_path):
         image_pil = T.Resize(512)(Image.open(image_path).convert("RGB"))
-        image = T.ToTensor()(image_pil).unsqueeze(0).to(device)
+        image = T.ToTensor()(image_pil).unsqueeze(0).to(self.device)
         return image
 
     @torch.no_grad()

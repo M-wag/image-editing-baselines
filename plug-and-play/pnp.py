@@ -36,7 +36,7 @@ class PNP(nn.Module):
         print('Loading SD model')
 
         pipe = StableDiffusionPipeline.from_pretrained(model_key, torch_dtype=torch.float16).to("cuda")
-        pipe.enable_xformers_memory_efficient_attention()
+        # pipe.enable_xformers_memory_efficient_attention()
 
         self.vae = pipe.vae
         self.tokenizer = pipe.tokenizer
